@@ -21,6 +21,11 @@ desktop.ini
 *.env
 *.env.local
 
+# ===== Spring Boot 敏感配置 =====
+application.yml
+application-*.yml
+!application-example.yml
+
 # ===== Node (如果前端用到) =====
 node_modules/
 dist/
