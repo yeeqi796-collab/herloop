@@ -1,0 +1,31 @@
+# ===== IDE =====
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# ===== Java / Maven =====
+target/
+*.class
+*.jar
+*.war
+*.log
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Env =====
+*.env
+*.env.local
+
+# ===== Node (如果前端用到) =====
+node_modules/
+dist/
+
+# ===== Misc =====
+*.swp
+*.swo
+*~
