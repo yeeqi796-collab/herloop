@@ -742,7 +742,21 @@ async function loadProducts() {
         }
         
         // 解析后端返回的 JSON 数据
-        products = await response.json();
+        const result = await response.json();
+        // 1. 安全解包：如果后端有返回 list 就用 list，没有就给个空数组
+        const rawList = result.data && result.data.list ? result.data.list : [];
+        
+        // 2. 字段映射：把后端字段翻译为前端 Grid 渲染需要的字段
+        products = rawList.map(p => ({
+            ...p,
+            mode: p.tradeMode || 'cash',
+            cash: p.cashPrice || 0,
+            points: p.pointsPrice || 0,
+            cond: p.condition || '',
+            desc: p.description || '',
+            date: p.createdAt || '',
+            blob: ['pink','mint','lavender'][p.id % 3] // 动态生成卡片颜色
+        }));
         console.log("成功拿到后端商品数据:", products);
         
         // 渲染页面：数据拿到后立即刷新商品网格
@@ -761,21 +775,33 @@ window.addEventListener('DOMContentLoaded', () => {
   loadWants();
   loadPointsLog();
   loadMyTrades();
+  loadMyProducts();
+  loadMyWants();
+  loadFavorites();
   // 根据当前 token 决定是否显示管理员后台
   updateAdminPanelVisibility();
 });
 
-// 1. 声明另外三组数据的空数组/空对象
+// 1. 声明另外数据的空数组/空对象
 let wants = [];
 let pointsLog = [];
 let myTrades = {};
+let myProducts = [];  // 我的商品
+let myWants = [];     // 我的求购
+let favorites = [];   // 我的收藏
 
 // ======= 第二组：获取求购信息 =======
 async function loadWants() {
     try {
     const response = await authFetch("/api/wants");
         if (!response.ok) throw new Error(`状态码: ${response.status}`);
-        wants = await response.json();
+        const result = await response.json();
+        // 解包并映射字段，注意根据指南提示，求购人名字是 w.user.nickname
+        wants = (result.data && result.data.list ? result.data.list : []).map(w => ({
+            ...w,
+            desc: w.description || '',
+            date: w.createdAt || ''
+        }));
         console.log("成功拿到后端求购数据:", wants);
         // 如果是 Vue，记得在这里赋值：this.wants = wants;
     } catch (error) {
@@ -788,7 +814,13 @@ async function loadPointsLog() {
     try {
     const response = await authFetch("/api/user/points/log");
         if (!response.ok) throw new Error(`状态码: ${response.status}`);
-        pointsLog = await response.json();
+        const result = await response.json();
+        // 解包并转换为前端积分明细需要的简写字段 (t, v, d)
+        pointsLog = (result.data && result.data.list ? result.data.list : []).map(l => ({
+            t: l.description,
+            v: l.amount,
+            d: l.createdAt
+        }));
         console.log("成功拿到后端积分日志:", pointsLog);
         // 如果是 Vue，记得在这里赋值：this.pointsLog = pointsLog;
     } catch (error) {
@@ -801,11 +833,84 @@ async function loadMyTrades() {
     try {
     const response = await authFetch("/api/user/trades");
         if (!response.ok) throw new Error(`状态码: ${response.status}`);
-        myTrades = await response.json();
+        const result = await response.json();
+        // 1. 安全拿到所有交易的数组
+        const allTrades = result.data && result.data.list ? result.data.list : [];
+
+        // 2. 前端自行分组：根据 type 字段进行过滤归类
+        myTrades = {
+            buy: allTrades.filter(t => t.type === 'buy'),
+            sell: allTrades.filter(t => t.type === 'sell')
+        };
         console.log("成功拿到后端交易数据:", myTrades);
         // 如果是 Vue，记得在这里赋值：this.myTrades = myTrades;
     } catch (error) {
         console.error("获取我的交易失败:", error);
+    }
+}
+
+// ======= 第五组：获取我的商品 =======
+async function loadMyProducts() {
+    try {
+        const response = await authFetch("/api/user/products");
+        if (!response.ok) throw new Error(`状态码: ${response.status}`);
+        const result = await response.json();
+        const rawList = result.data && result.data.list ? result.data.list : [];
+        // 字段映射，确保前端渲染函数能用上
+        myProducts = rawList.map(p => ({
+            ...p,
+            mode: p.tradeMode || 'cash',
+            cash: p.cashPrice || 0,
+            points: p.pointsPrice || 0,
+            cond: p.condition || '',
+            desc: p.description || '',
+            date: p.createdAt || '',
+            blob: ['pink','mint','lavender'][p.id % 3]
+        }));
+        console.log("成功拿到我的商品数据:", myProducts);
+    } catch (error) {
+        console.error("获取我的商品失败:", error);
+    }
+}
+
+// ======= 第六组：获取我的求购 =======
+async function loadMyWants() {
+    try {
+        const response = await authFetch("/api/user/wants");
+        if (!response.ok) throw new Error(`状态码: ${response.status}`);
+        const result = await response.json();
+        myWants = (result.data && result.data.list ? result.data.list : []).map(w => ({
+            ...w,
+            desc: w.description || '',
+            date: w.createdAt || ''
+        }));
+        console.log("成功拿到我的求购数据:", myWants);
+    } catch (error) {
+        console.error("获取我的求购失败:", error);
+    }
+}
+
+// ======= 第七组：获取我的收藏 =======
+async function loadFavorites() {
+    try {
+        const response = await authFetch("/api/favorites");
+        if (!response.ok) throw new Error(`状态码: ${response.status}`);
+        const result = await response.json();
+        const rawList = result.data && result.data.list ? result.data.list : [];
+        // favorites 返回的是商品对象，进行字段映射
+        favorites = rawList.map(p => ({
+            ...p,
+            mode: p.tradeMode || 'cash',
+            cash: p.cashPrice || 0,
+            points: p.pointsPrice || 0,
+            cond: p.condition || '',
+            desc: p.description || '',
+            date: p.createdAt || '',
+            blob: ['pink','mint','lavender'][p.id % 3]
+        }));
+        console.log("成功拿到我的收藏数据:", favorites);
+    } catch (error) {
+        console.error("获取我的收藏失败:", error);
     }
 }
 
@@ -1017,35 +1122,29 @@ async function submitProof() {
     renderPendingList();
   }
 
-  async function toggleFavorite(id) {
-    if (!id) {
+  async function toggleFavorite(productId, isFavorited) {
+    if (!productId) {
         console.error("无法收藏：缺少商品 ID");
         return;
     }
 
+    // 根据当前状态决定使用什么请求方法
+    const method = isFavorited ? 'DELETE' : 'POST';
+    
     try {
-        // 向后端发起 POST 请求，动态拼接商品的 id
-        const response = await authFetch(`/api/favorites/${id}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-                // 同样地，后面加了登录后，这里需要带上 Token 认证
-            }
+        const response = await authFetch(`/api/favorites/${productId}`, {
+            method: method
         });
-
-        if (!response.ok) {
-            throw new Error(`收藏失败，状态码: ${response.status}`);
+        
+        if (response.ok) {
+            // 提示用户成功，并刷新或切换前端按钮状态
+            alert(isFavorited ? '已取消收藏' : '收藏成功');
+            // 这里可以加上你原本用于更新 UI 的代码（比如改变星星颜色）
+        } else {
+            alert('操作失败，请重试');
         }
-
-        const result = await response.json();
-        console.log("收藏接口返回结果:", result);
-        
-        // 【前端 UI 提示】：这里可以根据后端返回的状态，切换星星或爱心的亮起状态
-        alert("操作成功！"); 
-        
     } catch (error) {
-        console.error("收藏功能出错了:", error);
-        alert("收藏失败，请稍后再试");
+        console.error('收藏操作失败:', error);
     }
 }
 
@@ -1300,6 +1399,40 @@ document.getElementById('modeRow').addEventListener('click', e=>{
   document.getElementById('pointsBox').style.display = (mode==='points'||mode==='both') ? 'block':'none';
 });
 async function submitPublish(formData, type) {
+    if (!formData) {
+        // 1. 判断是发布闲置（product）还是求购（want）
+        const pubMode = document.getElementById('segWant').classList.contains('active') ? 'want' : 'idle';
+        type = pubMode === 'idle' ? 'product' : 'want';
+
+        // 2. 获取公共的标题和描述
+        const title = document.getElementById('pTitle').value.trim();
+        const desc = document.getElementById('pDesc').value.trim();
+        if (!title) { alert('请填写标题'); return; }
+
+        // 3. 根据类型组合不同的后端字段
+        if (type === 'product') {
+            const cond = document.querySelector('#condRow .opt-chip.sel');
+            const mode = document.querySelector('#modeRow .mode-box.sel');
+            formData = {
+                title: title,
+                description: desc,
+                condition: cond ? cond.dataset.c : '99新',
+                tradeMode: mode ? mode.dataset.m : 'cash',
+                cashPrice: parseFloat(document.querySelector('#cashBox input')?.value) || 0,
+                pointsPrice: parseInt(document.querySelector('#pointsBox input')?.value) || 0,
+                category: '其他',
+                icon: 'box'
+            };
+        } else {
+            formData = {
+                title: title,
+                description: desc,
+                budget: '面议',
+                icon: 'star'
+            };
+        }
+    }
+    
     // 1. 根据前端传过来的类型（商品还是求购），自动匹配后端的接口路由
     // 假设：type 为 'product' 代表商品，'want' 代表求购
     const url = type === 'product' ? "/api/products" : "/api/wants";
@@ -1339,8 +1472,7 @@ async function submitPublish(formData, type) {
 /* ===================== MY PRODUCTS ===================== */
 function renderMyProducts(filterStatus){
   filterStatus = filterStatus || 'all';
-  const mine = products.filter(p=>p.seller.name==='小叶');
-  const list = filterStatus==='all' ? mine : mine.filter(p=>p.status===filterStatus);
+  const list = filterStatus==='all' ? myProducts : myProducts.filter(p=>p.status===filterStatus);
   const el = document.getElementById('myProductsList');
   if(list.length===0){
     el.innerHTML = `<div class="empty-state"><img src="${LOGO_ICON}" alt="" style="width:96px; height:auto; margin-bottom:14px; opacity:.55;"><div class="t">这里还没有商品</div><div class="s">点击右下角「发布」，把闲置交给需要的姐妹</div></div>`;
@@ -1409,14 +1541,14 @@ document.getElementById('myTradeTabs').addEventListener('click', e=>{
 });
 
 /* ===================== misc lists ===================== */
-document.getElementById('myWantsList').innerHTML = wants.filter(w=>w.user.name==='小叶').map(w=>`
+document.getElementById('myWantsList').innerHTML = myWants.map(w=>`
   <div class="want-card" onclick="openWantDetail(${w.id})">
     <div class="want-top"><div class="want-title">${w.title}</div><div class="want-budget">${w.budget}</div></div>
     <div class="want-desc">${w.desc}</div>
   </div>
 `).join('') || `<div class="empty-state"><div class="t">还没有发布求购</div></div>`;
 
-document.getElementById('favList').innerHTML = products.slice(0,3).map(p=>`
+document.getElementById('favList').innerHTML = favorites.map(p=>`
   <div class="list-row" onclick="openDetail(${p.id},'view-favorites')">
     <div class="list-thumb blob-${p.blob}" style="background:radial-gradient(circle, ${p.blob==='pink'?'var(--pink-light)':p.blob==='mint'?'var(--mint-light)':'var(--lavender-light)'} 0%, var(--bg) 80%);">${svgIcon(p.icon)}</div>
     <div class="list-info"><div class="list-title">${p.title}</div><div class="list-sub">${p.mode==='cash'?`¥${p.cash}`:p.mode==='points'?`✨${p.points}`:`¥${p.cash}+✨${p.points}`}</div></div>
@@ -1447,7 +1579,7 @@ async function submitLogin() {
         const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ email: username, password, nickname: username })
         });
 
         if (!response.ok) throw new Error("用户名或密码错误");
@@ -1468,7 +1600,10 @@ async function submitLogin() {
         // 隐藏弹窗
         document.getElementById('login-modal').style.display = 'none';
         
-        // 登录成功后，重新刷一下需要权限的数据（比如交易记录和积分）
+        // 登录成功后，重新刷一下所有需要权限的数据
+        loadMyProducts();
+        loadMyWants();
+        loadFavorites();
         loadPointsLog();
         loadMyTrades();
 
@@ -1492,7 +1627,7 @@ async function submitRegister() {
         const response = await fetch("/api/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ email: username, password, nickname: username })
         });
 
         if (!response.ok) throw new Error("注册失败，可能账号已存在");
@@ -1510,7 +1645,7 @@ async function submitRegister() {
 document.querySelectorAll('.logo-icon-img').forEach(img=>img.src=LOGO_ICON);
 document.querySelectorAll('.logo-full-img').forEach(img=>img.src=LOGO_FULL);
 </script>
-<div id="login-modal" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0px 0px 10px rgba(0,0,0,0.5); z-index: 9999; display: none;">
+<div id="login-modal" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0px 0px 10px rgba(0,0,0,0.5); z-index: 9999; display: block;">
     ### 🔑 欢迎登录 HerLoop
     <hr>
     <div style="margin-bottom: 10px;">
