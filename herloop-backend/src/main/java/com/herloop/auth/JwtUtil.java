@@ -23,14 +23,21 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(Long userId, String email) {
+    public String generateToken(Long userId, String email, String role) {
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("email", email)
+                .claim("role", role != null ? role : "USER")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getKey())
                 .compact();
+    }
+
+    public String getRole(String token) {
+        Claims claims = parseToken(token);
+        String role = claims.get("role", String.class);
+        return role != null ? role : "USER";
     }
 
     public Claims parseToken(String token) {

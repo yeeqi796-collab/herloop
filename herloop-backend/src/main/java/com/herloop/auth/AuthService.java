@@ -34,15 +34,14 @@ public class AuthService {
         user.setWechat(req.getWechat());
         user.setPoints(0);
         user.setVerified(false);
+        user.setRole("USER");
         userMapper.insert(user);
 
-        // 生成 token 并返回
-        String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
         return buildLoginResponse(token, user);
     }
 
     public LoginResponse login(LoginRequest req) {
-        // 查找用户
         User user = userMapper.selectOne(
                 new LambdaQueryWrapper<User>().eq(User::getEmail, req.getEmail())
         );
@@ -50,13 +49,11 @@ public class AuthService {
             throw new BusinessException("邮箱或密码错误");
         }
 
-        // 验证密码
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
             throw new BusinessException("邮箱或密码错误");
         }
 
-        // 生成 token
-        String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
         return buildLoginResponse(token, user);
     }
 
