@@ -60,7 +60,7 @@ public class ProductService {
         product.setUserId(userId);
         product.setTitle(req.getTitle());
         product.setCategory(req.getCategory());
-        product.setConditionDesc(req.getConditionDesc());
+        product.setConditionDesc(req.getCondition());
         product.setDescription(req.getDescription());
         product.setCashPrice(req.getCashPrice());
         product.setPointsPrice(req.getPointsPrice() != null ? req.getPointsPrice() : 0);
@@ -107,7 +107,7 @@ public class ProductService {
         vo.setId(product.getId());
         vo.setTitle(product.getTitle());
         vo.setCategory(product.getCategory());
-        vo.setConditionDesc(product.getConditionDesc());
+        vo.setCondition(product.getConditionDesc());
         vo.setDescription(product.getDescription());
         vo.setCashPrice(product.getCashPrice());
         vo.setPointsPrice(product.getPointsPrice());

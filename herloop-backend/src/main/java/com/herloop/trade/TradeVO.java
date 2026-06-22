@@ -9,13 +9,17 @@ public class TradeVO {
 
     private Long id;
     private Long productId;
-    private String productTitle;
-    private Long buyerId;
-    private String buyerNickname;
-    private Long sellerId;
-    private String sellerNickname;
+    private ProductBrief product;
     private String type;
     private String status;
     private LocalDateTime tradeDate;
-    private LocalDateTime createdAt;
+
+    @Data
+    public static class ProductBrief {
+        private Long id;
+        private String title;
+        private String icon;
+        private String category;
+        private String tradeMode;
+    }
 }

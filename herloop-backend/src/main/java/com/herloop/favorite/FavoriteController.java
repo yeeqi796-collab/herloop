@@ -17,10 +17,17 @@ public class FavoriteController {
     private final FavoriteService favoriteService;
 
     @PostMapping("/{productId}")
-    public Result<Map<String, Boolean>> toggle(@PathVariable Long productId) {
+    public Result<Map<String, Boolean>> add(@PathVariable Long productId) {
         Long userId = CurrentUser.getId();
-        boolean favorited = favoriteService.toggle(userId, productId);
-        return Result.success(Map.of("favorited", favorited));
+        favoriteService.add(userId, productId);
+        return Result.success(Map.of("favorited", true));
+    }
+
+    @DeleteMapping("/{productId}")
+    public Result<Map<String, Boolean>> remove(@PathVariable Long productId) {
+        Long userId = CurrentUser.getId();
+        favoriteService.remove(userId, productId);
+        return Result.success(Map.of("favorited", false));
     }
 
     @GetMapping("/check/{productId}")

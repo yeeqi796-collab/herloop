@@ -97,11 +97,12 @@ public class WantService {
 
         User owner = userMapper.selectById(want.getUserId());
         if (owner != null) {
-            WantVO.OwnerBrief brief = new WantVO.OwnerBrief();
+            WantVO.UserBrief brief = new WantVO.UserBrief();
             brief.setId(owner.getId());
             brief.setNickname(owner.getNickname());
             brief.setAvatar(owner.getAvatar());
-            vo.setOwner(brief);
+            brief.setVerified(owner.getVerified());
+            vo.setUser(brief);
         }
         return vo;
     }
