@@ -664,6 +664,27 @@ textarea.input{resize:none; height:78px; line-height:1.6;}
               <span style="font-size:12.5px; font-weight:800; color:var(--lavender-deep);">去完成身份认证 →</span>
             </div>
           </div>
+          <div id="proof-upload-container" style="margin: 20px 0 0; padding: 15px; border: 1px dashed #aaa; border-radius: 8px; background:#fff;">
+            <div style="font-weight:800; font-size:16px; margin-bottom:8px;">🛡️ 账户认证审核</div>
+            <p style="font-size: 14px; color: #666; margin:0 0 15px;">请上传您的交易凭证或指定截图，工作人员审核通过后即可激活完整功能。</p>
+            <div style="margin-top: 15px;">
+                <input type="file" id="proof-image-input" accept="image/*" style="display: block; margin-bottom: 10px; width:100%;">
+                <button id="btn-submit-proof" onclick="submitProof()" style="padding: 10px 14px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    提交审核
+                </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-audit-container" style="margin: 20px; padding: 15px; border: 1px solid #ff9800; border-radius: 8px; background-color: #fff9e6;">
+        <div style="font-weight:800; font-size:16px; margin-bottom:8px;">🧑‍💻 工作人员审核后台</div>
+        <p style="font-size: 14px; color: #666; margin:0 0 12px;">这里是工作人员看到的界面。点击“刷新列表”获取最新待审核的截图。</p>
+        <button onclick="loadPendingProofs()" style="padding: 5px 10px; background-color: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; margin-bottom: 15px;">
+            🔄 刷新待审核列表
+        </button>
+        <div id="pending-list" style="display: flex; flex-direction: column; gap: 15px;">
+            <p id="no-pending-hint" style="color: #999; font-style: italic;">暂无待审核数据，请点击刷新或等待用户提交...</p>
         </div>
       </div>
     </section>
@@ -713,8 +734,8 @@ let products = [];
 // 2. 写一个去后端抓取商品的异步函数
 async function loadProducts() {
     try {
-        // 去敲后端的门，要数据
-        const response = await fetch("/api/products");
+    // 去敲后端的门，要数据
+    const response = await authFetch("/api/products");
         
         if (!response.ok) {
             throw new Error(`网络响应错误，状态码: ${response.status}`);
@@ -724,6 +745,8 @@ async function loadProducts() {
         products = await response.json();
         console.log("成功拿到后端商品数据:", products);
         
+        // 渲染页面：数据拿到后立即刷新商品网格
+        try{ renderGrid(); }catch(e){ console.warn('renderGrid 调用失败：', e); }
         // 【核心注意点】：如果你的页面用了 Vue，这里需要写成：this.products = products;
         // 如果是原生 JavaScript，需要在这里重新调用你前端写好的渲染页面的函数，比如：renderProductList();
 
@@ -734,10 +757,12 @@ async function loadProducts() {
 
 // 页面加载时，一口气调用所有获取数据的函数
 window.addEventListener('DOMContentLoaded', () => {
-    loadProducts();
-    loadWants();
-    loadPointsLog();
-    loadMyTrades();
+  loadProducts();
+  loadWants();
+  loadPointsLog();
+  loadMyTrades();
+  // 根据当前 token 决定是否显示管理员后台
+  updateAdminPanelVisibility();
 });
 
 // 1. 声明另外三组数据的空数组/空对象
@@ -748,7 +773,7 @@ let myTrades = {};
 // ======= 第二组：获取求购信息 =======
 async function loadWants() {
     try {
-        const response = await fetch("/api/wants");
+    const response = await authFetch("/api/wants");
         if (!response.ok) throw new Error(`状态码: ${response.status}`);
         wants = await response.json();
         console.log("成功拿到后端求购数据:", wants);
@@ -761,7 +786,7 @@ async function loadWants() {
 // ======= 第三组：获取积分日志 =======
 async function loadPointsLog() {
     try {
-        const response = await fetch("/api/user/points/log");
+    const response = await authFetch("/api/user/points/log");
         if (!response.ok) throw new Error(`状态码: ${response.status}`);
         pointsLog = await response.json();
         console.log("成功拿到后端积分日志:", pointsLog);
@@ -774,7 +799,7 @@ async function loadPointsLog() {
 // ======= 第四组：获取我的交易 =======
 async function loadMyTrades() {
     try {
-        const response = await fetch("/api/user/trades");
+    const response = await authFetch("/api/user/trades");
         if (!response.ok) throw new Error(`状态码: ${response.status}`);
         myTrades = await response.json();
         console.log("成功拿到后端交易数据:", myTrades);
@@ -784,7 +809,215 @@ async function loadMyTrades() {
     }
 }
 
-async function toggleFavorite(id) {
+// ======= 辅助：自动带上 Authorization 的 fetch 封装 =======
+function getAuthToken(){
+  try { return localStorage.getItem('user_token') || null; } catch(e){ return null; }
+}
+
+async function authFetch(url, options){
+  options = options || {};
+  const token = getAuthToken();
+
+  // 复制 headers，兼容 Headers 实例或普通对象
+  let headers = options.headers || {};
+  if (headers instanceof Headers) {
+    if (token) headers.set('Authorization', 'Bearer ' + token);
+  } else {
+    headers = Object.assign({}, headers);
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+  }
+
+  const opts = Object.assign({}, options, { headers });
+  return fetch(url, opts);
+}
+
+// ======= 管理员权限判断与面板显隐控制 =======
+function parseJwtPayload(token){
+  try{
+    const parts = token.split('.'); if(parts.length < 2) return null;
+    let payload = parts[1].replace(/-/g,'+').replace(/_/g,'/');
+    while(payload.length % 4) payload += '=';
+    const json = atob(payload);
+    try{ return JSON.parse(decodeURIComponent(escape(json))); } catch(e){ return JSON.parse(json); }
+  }catch(e){ return null; }
+}
+
+function isAdminToken(){
+  const token = getAuthToken(); if(!token) return false;
+  const payload = parseJwtPayload(token); if(!payload) return false;
+  if(payload.role && String(payload.role).toUpperCase().includes('ADMIN')) return true;
+  if(Array.isArray(payload.roles) && payload.roles.find(r=>String(r).toUpperCase()==='ADMIN')) return true;
+  if(payload.isAdmin === true || payload.admin === true) return true;
+  return false;
+}
+
+function updateAdminPanelVisibility(){
+  const el = document.getElementById('admin-audit-container');
+  if(!el) return;
+  if(isAdminToken()){
+    el.style.display = 'block';
+    // 自动刷新待审核列表，管理员打开页面时就能看到数据
+    try{ loadPendingProofs(); }catch(e){}
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// ======= 阶段一：用户提交认证截图 =======
+async function submitProof() {
+    const fileInput = document.getElementById('proof-image-input');
+    
+    // 1. 判断用户到底选了图片没有
+    if (!fileInput || fileInput.files.length === 0) {
+        alert("请先选择一张截图再点击提交！");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    
+    // 2. 核心：用 FormData 来包装二进制文件数据
+    const formData = new FormData();
+    // 'file' 是传给后端的字段名，需要跟后端队友对一下他那边接收的名字是不是叫 'file'
+    formData.append('file', file); 
+
+    // 可以选择性地把当前用户的某些基础信息一并带过去，如果没有也可以不带
+    // formData.append('userId', '当前用户的ID'); 
+
+    try {
+        // 按钮变更为加载中状态，防止用户重复疯狂点击
+        const btn = document.getElementById('btn-submit-proof');
+        btn.disabled = true;
+        btn.innerText = "上传中...";
+
+        // 3. 向后端发起 POST 请求
+        const response = await authFetch("/api/auth/submit-proof", {
+            method: "POST",
+            // 💡 特别注意：上传文件给后端时，千万【不要】写 headers: { 'Content-Type': '...' }
+            // 浏览器遇到 FormData 会自动帮我们生成正确的 boundary 请求头
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`上传失败，状态码: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("截图上传成功，后端返回：", result);
+        
+        alert("提交成功！工作人员会尽快为您审核。");
+        
+        // 4. 上传成功后清空输入框
+        fileInput.value = "";
+
+    } catch (error) {
+        console.error("提交截图时发生错误:", error);
+        alert("提交失败，请检查网络或联系后端队友");
+    } finally {
+        // 恢复按钮状态
+        const btn = document.getElementById('btn-submit-proof');
+        btn.disabled = false;
+        btn.innerText = "提交审核";
+    }
+}
+
+  // 声明一个数组，用来存储从后端拿到的待审核列表
+  let pendingProofs = [];
+
+  // ======= 1. 工作人员：获取待审核列表 =======
+  async function loadPendingProofs() {
+    try {
+      const response = await authFetch("/api/admin/pending-proofs");
+        
+      if (!response.ok) {
+        throw new Error(`获取失败，状态码: ${response.status}`);
+      }
+        
+      pendingProofs = await response.json();
+      console.log("成功拿到待审核列表:", pendingProofs);
+        
+      // 调用渲染函数，把数据画到页面上
+      renderPendingList();
+        
+    } catch (error) {
+      console.error("加载审核列表失败:", error);
+      // 【注意】因为目前后端还没写好，这里我们写一段【假数据模拟渲染】，方便你现在就能看到界面长什么样：
+      mockRenderPendingList();
+    }
+  }
+
+  // ======= 2. 工作人员：提交审核结果（通过/拒绝） =======
+  async function auditProof(id, isApproved) {
+    // 根据点击的是通过还是拒绝，给后端传不同的状态字符串
+    const status = isApproved ? 'APPROVED' : 'REJECTED';
+    
+    try {
+      const response = await authFetch(`/api/admin/audit/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ status: status })
+      });
+
+      if (!response.ok) {
+        throw new Error(`操作失败，状态码: ${response.status}`);
+      }
+
+      alert(isApproved ? "操作成功：已通过该用户的认证！" : "操作成功：已拒绝该用户的申请。");
+        
+      // 重新加载列表，刷新界面
+      loadPendingProofs();
+        
+    } catch (error) {
+      console.error("审核操作失败:", error);
+      alert(`模拟提示：你点击了【${isApproved ? '通过' : '拒绝'}】(用户ID: ${id})。等后端接口通了即可真正修改数据库！`);
+    }
+  }
+
+  // ======= 3. 辅助函数：把数据动态渲染到 HTML 中 =======
+  function renderPendingList() {
+    const listContainer = document.getElementById('pending-list');
+    const hint = document.getElementById('no-pending-hint');
+    
+    if (!listContainer) return;
+    
+    if (pendingProofs.length === 0) {
+      if (hint) hint.style.display = 'block';
+      return;
+    }
+    
+    if (hint) hint.style.display = 'none';
+    listContainer.innerHTML = ''; // 先清空旧内容
+
+    pendingProofs.forEach(item => {
+      const card = document.createElement('div');
+      card.style = "display: flex; align-items: center; justify-content: space-between; padding: 10px; border: 1px solid #ddd; background: #fff; border-radius: 4px;";
+      card.innerHTML = `
+        <div>
+          <strong>申请用户 ID:</strong> ${item.userId || item.id} <br>
+          <small style="color:#999;">提交时间: ${item.submitTime || '刚刚'}</small>
+        </div>
+        <div style="display:flex; align-items:center;">
+          <img src="${item.imageUrl || 'https://via.placeholder.com/100'}" alt="凭证截图" style="max-width: 100px; max-height: 80px; border: 1px solid #eee; margin-right: 15px; vertical-align: middle;">
+          <button onclick="auditProof('${item.id}', true)" style="background:#4CAF50; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; margin-right:5px;">通过</button>
+          <button onclick="auditProof('${item.id}', false)" style="background:#f44336; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">拒绝</button>
+        </div>
+      `;
+      listContainer.appendChild(card);
+    });
+  }
+
+  // 为了让你没后端也能预览界面，特意准备的模拟渲染函数
+  function mockRenderPendingList() {
+    // 制造2条假数据
+    pendingProofs = [
+      { id: "1001", userId: "张三(User_A)", imageUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150", submitTime: "2026-06-22 10:00" },
+      { id: "1002", userId: "李四(User_B)", imageUrl: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=150", submitTime: "2026-06-22 11:15" }
+    ];
+    renderPendingList();
+  }
+
+  async function toggleFavorite(id) {
     if (!id) {
         console.error("无法收藏：缺少商品 ID");
         return;
@@ -792,7 +1025,7 @@ async function toggleFavorite(id) {
 
     try {
         // 向后端发起 POST 请求，动态拼接商品的 id
-        const response = await fetch(`/api/favorites/${id}`, {
+        const response = await authFetch(`/api/favorites/${id}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -1073,7 +1306,7 @@ async function submitPublish(formData, type) {
     
     try {
         // 2. 向后端发起 POST 请求
-        const response = await fetch(url, {
+        const response = await authFetch(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -1227,6 +1460,8 @@ async function submitLogin() {
         const token = result.token || (result.data && result.data.token);
         if (token) {
             localStorage.setItem("user_token", token);
+          // 登录成功后更新管理员面板显示（若为管理员则显示）
+          try{ updateAdminPanelVisibility(); }catch(e){}
         }
 
         alert("登录成功！");
@@ -1263,6 +1498,8 @@ async function submitRegister() {
         if (!response.ok) throw new Error("注册失败，可能账号已存在");
 
         alert("注册成功！现在可以直接点击登录啦。");
+        // 注册后确保管理员面板根据当前 token 隐藏或显示（通常无 token）
+        try{ updateAdminPanelVisibility(); }catch(e){}
     } catch (error) {
         console.error("注册出错了:", error);
         alert(error.message || "注册失败");
