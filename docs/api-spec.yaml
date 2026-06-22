@@ -37,14 +37,18 @@ paths:
           application/json:
             schema:
               type: object
-              required: [nickname, password]
+              required: [email, password, nickname]
               properties:
-                nickname:
+                email:
                   type: string
-                  example: 小叶
+                  format: email
+                  example: xiaoye@herloop.com
                 password:
                   type: string
                   example: "123456"
+                nickname:
+                  type: string
+                  example: 小叶
                 avatar:
                   type: string
                   example: "🦢"
@@ -69,11 +73,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [nickname, password]
+              required: [email, password]
               properties:
-                nickname:
+                email:
                   type: string
-                  example: 小叶
+                  format: email
+                  example: xiaoye@herloop.com
                 password:
                   type: string
                   example: "123456"
@@ -559,6 +564,54 @@ paths:
       responses:
         "200":
           description: 取消成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Result"
+
+  /favorites/check/{productId}:
+    get:
+      tags: [Favorite]
+      summary: 检查是否已收藏
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 收藏状态
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Result"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          favorited:
+                            type: boolean
+
+  /wants/{id}/close:
+    patch:
+      tags: [Want]
+      summary: 关闭求购
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 关闭成功
           content:
             application/json:
               schema:

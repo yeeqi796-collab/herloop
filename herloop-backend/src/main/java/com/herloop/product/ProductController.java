@@ -30,20 +30,11 @@ public class ProductController {
         return Result.success(productService.create(userId, req));
     }
 
-    @PatchMapping("/{id}/status")
+    @PutMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id,
-                                     @RequestParam String status) {
+                                     @RequestBody java.util.Map<String, String> body) {
         Long userId = CurrentUser.getId();
-        productService.updateStatus(userId, id, status);
+        productService.updateStatus(userId, id, body.get("status"));
         return Result.success(null);
-    }
-
-    @GetMapping("/mine")
-    public Result<PageResult<ProductVO>> mine(
-            @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        Long userId = CurrentUser.getId();
-        return Result.success(productService.listMyProducts(userId, status, page, pageSize));
     }
 }

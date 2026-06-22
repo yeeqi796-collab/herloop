@@ -41,6 +41,22 @@ public class FavoriteService {
         return true;
     }
 
+    public void add(Long userId, Long productId) {
+        if (!isFavorited(userId, productId)) {
+            Favorite fav = new Favorite();
+            fav.setUserId(userId);
+            fav.setProductId(productId);
+            favoriteMapper.insert(fav);
+        }
+    }
+
+    public void remove(Long userId, Long productId) {
+        LambdaQueryWrapper<Favorite> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Favorite::getUserId, userId)
+                .eq(Favorite::getProductId, productId);
+        favoriteMapper.delete(wrapper);
+    }
+
     public boolean isFavorited(Long userId, Long productId) {
         LambdaQueryWrapper<Favorite> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Favorite::getUserId, userId)
@@ -73,7 +89,7 @@ public class FavoriteService {
         vo.setId(product.getId());
         vo.setTitle(product.getTitle());
         vo.setCategory(product.getCategory());
-        vo.setConditionDesc(product.getConditionDesc());
+        vo.setCondition(product.getConditionDesc());
         vo.setDescription(product.getDescription());
         vo.setCashPrice(product.getCashPrice());
         vo.setPointsPrice(product.getPointsPrice());

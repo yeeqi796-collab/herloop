@@ -14,5 +14,7 @@ public class UserVO {
     private String wechat;
     private Integer points;
     private Boolean verified;
+    private Integer productCount;
+    private Integer tradeCount;
     private LocalDateTime createdAt;
 }

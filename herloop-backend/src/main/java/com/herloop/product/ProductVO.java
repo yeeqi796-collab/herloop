@@ -11,7 +11,7 @@ public class ProductVO {
     private Long id;
     private String title;
     private String category;
-    private String conditionDesc;
+    private String condition;
     private String description;
     private BigDecimal cashPrice;
     private Integer pointsPrice;

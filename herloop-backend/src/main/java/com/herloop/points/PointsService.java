@@ -58,7 +58,8 @@ public class PointsService {
     private PointsLogVO toVO(PointsLog log) {
         PointsLogVO vo = new PointsLogVO();
         vo.setId(log.getId());
-        vo.setAmount(log.getAmount());
+        int amt = log.getAmount();
+        vo.setAmount(amt >= 0 ? "+" + amt : String.valueOf(amt));
         vo.setDescription(log.getDescription());
         vo.setCreatedAt(log.getCreatedAt());
         return vo;

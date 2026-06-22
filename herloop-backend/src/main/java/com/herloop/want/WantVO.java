@@ -14,12 +14,13 @@ public class WantVO {
     private String icon;
     private String status;
     private LocalDateTime createdAt;
-    private OwnerBrief owner;
+    private UserBrief user;
 
     @Data
-    public static class OwnerBrief {
+    public static class UserBrief {
         private Long id;
         private String nickname;
         private String avatar;
+        private Boolean verified;
     }
 }

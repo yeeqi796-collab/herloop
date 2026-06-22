@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public class PointsLogVO {
 
     private Long id;
-    private Integer amount;
+    private String amount;
     private String description;
     private LocalDateTime createdAt;
 }

@@ -40,11 +40,4 @@ public class WantController {
         return Result.success(null);
     }
 
-    @GetMapping("/mine")
-    public Result<PageResult<WantVO>> mine(
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        Long userId = CurrentUser.getId();
-        return Result.success(wantService.listMyWants(userId, page, pageSize));
-    }
 }

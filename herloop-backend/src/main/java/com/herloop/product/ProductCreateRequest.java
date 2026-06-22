@@ -15,7 +15,7 @@ public class ProductCreateRequest {
     private String category;
 
     @NotBlank(message = "成色不能为空")
-    private String conditionDesc;
+    private String condition;
 
     private String description;
 
