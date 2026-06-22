@@ -706,31 +706,83 @@ const ICONS = {
 function svgIcon(name){ return ICONS[name] || ICONS.bag; }
 
 /* ===================== DATA ===================== */
-const products = [
-  { id: 1, title: '大牌口红(仅试色)', cash: 120, points: 50, mode: 'both', priceCash: 120, pricePoints: 50, tradeMode: 'both', desc: '正品口红，颜色不适合我，仅试色一次。', description: '正品口红，颜色不适合我，仅试色一次。', icon: 'lipstick', blob: 'pink' },
-  { id: 2, title: '复古针织开衫', cash: 85, points: 0, mode: 'cash', priceCash: 85, pricePoints: 0, tradeMode: 'cash', desc: '九成新，M码，温柔风针织衫。', description: '九成新，M码，温柔风针织衫。', icon: 'shirt', blob: 'mint' },
-  { id: 3, title: '考研英语真题资料', cash: 0, points: 100, mode: 'points', priceCash: 0, pricePoints: 100, tradeMode: 'points', desc: '全新未动，附带解析和网课资源。', description: '全新未动，附带解析和网课资源。', icon: 'book', blob: 'lavender' }
-];
 
-const wants = [
-  { id: 1, title: '求购一本八成新以上《红楼梦》', budget: 30, priceBudget: 30, desc: '哪个姐妹看完了想回血的可以滴滴我，最好带插图。' },
-  { id: 2, title: '蹲一个出二手瑜伽垫的', budget: 50, priceBudget: 50, desc: '想开始练瑜伽，要求无破损、防滑效果好一点的。' }
-];
+// 1. 先声明一个空数组，用来存放从后端拿到的商品
+let products = [];
 
-const pointsLog = [
-  { id: 1, t: '出售「大牌口红」', description: '出售「大牌口红」', d: '2023-10-25 14:30', createdAt: '2023-10-25T14:30:00Z', v: '+50', amount: '+50' },
-  { id: 2, t: '签到奖励', description: '签到奖励', d: '2023-10-26 08:15', createdAt: '2023-10-26T08:15:00Z', v: '+5', amount: '+5' }
-];
+// 2. 写一个去后端抓取商品的异步函数
+async function loadProducts() {
+    try {
+        // 去敲后端的门，要数据
+        const response = await fetch("/api/products");
+        
+        if (!response.ok) {
+            throw new Error(`网络响应错误，状态码: ${response.status}`);
+        }
+        
+        // 解析后端返回的 JSON 数据
+        products = await response.json();
+        console.log("成功拿到后端商品数据:", products);
+        
+        // 【核心注意点】：如果你的页面用了 Vue，这里需要写成：this.products = products;
+        // 如果是原生 JavaScript，需要在这里重新调用你前端写好的渲染页面的函数，比如：renderProductList();
 
-const myTrades = {
-  buy:[
-    {id:2,status:'已完成', date:'06-15'},
-  ],
-  sell:[
-    {id:3,status:'姐妹预定中', date:'06-18', action:'remind'},
-    {id:6,status:'已完成积分交易', date:'06-14', action:'done'},
-  ]
-};
+    } catch (error) {
+        console.error("获取商品列表失败了:", error);
+    }
+}
+
+// 页面加载时，一口气调用所有获取数据的函数
+window.addEventListener('DOMContentLoaded', () => {
+    loadProducts();
+    loadWants();
+    loadPointsLog();
+    loadMyTrades();
+});
+
+// 1. 声明另外三组数据的空数组/空对象
+let wants = [];
+let pointsLog = [];
+let myTrades = {};
+
+// ======= 第二组：获取求购信息 =======
+async function loadWants() {
+    try {
+        const response = await fetch("/api/wants");
+        if (!response.ok) throw new Error(`状态码: ${response.status}`);
+        wants = await response.json();
+        console.log("成功拿到后端求购数据:", wants);
+        // 如果是 Vue，记得在这里赋值：this.wants = wants;
+    } catch (error) {
+        console.error("获取求购列表失败:", error);
+    }
+}
+
+// ======= 第三组：获取积分日志 =======
+async function loadPointsLog() {
+    try {
+        const response = await fetch("/api/user/points/log");
+        if (!response.ok) throw new Error(`状态码: ${response.status}`);
+        pointsLog = await response.json();
+        console.log("成功拿到后端积分日志:", pointsLog);
+        // 如果是 Vue，记得在这里赋值：this.pointsLog = pointsLog;
+    } catch (error) {
+        console.error("获取积分日志失败:", error);
+    }
+}
+
+// ======= 第四组：获取我的交易 =======
+async function loadMyTrades() {
+    try {
+        const response = await fetch("/api/user/trades");
+        if (!response.ok) throw new Error(`状态码: ${response.status}`);
+        myTrades = await response.json();
+        console.log("成功拿到后端交易数据:", myTrades);
+        // 如果是 Vue，记得在这里赋值：this.myTrades = myTrades;
+    } catch (error) {
+        console.error("获取我的交易失败:", error);
+    }
+}
 
 const statusText = {on:'在售', reserved:'姐妹预定中', sold:'已成交'};
 
