@@ -784,6 +784,38 @@ async function loadMyTrades() {
     }
 }
 
+async function toggleFavorite(id) {
+    if (!id) {
+        console.error("无法收藏：缺少商品 ID");
+        return;
+    }
+
+    try {
+        // 向后端发起 POST 请求，动态拼接商品的 id
+        const response = await fetch(`/api/favorites/${id}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+                // 同样地，后面加了登录后，这里需要带上 Token 认证
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`收藏失败，状态码: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("收藏接口返回结果:", result);
+        
+        // 【前端 UI 提示】：这里可以根据后端返回的状态，切换星星或爱心的亮起状态
+        alert("操作成功！"); 
+        
+    } catch (error) {
+        console.error("收藏功能出错了:", error);
+        alert("收藏失败，请稍后再试");
+    }
+}
+
 const statusText = {on:'在售', reserved:'姐妹预定中', sold:'已成交'};
 
 let filters = {cat:'全部', cash:false, points:false};
@@ -1034,12 +1066,41 @@ document.getElementById('modeRow').addEventListener('click', e=>{
   document.getElementById('cashBox').style.display = (mode==='cash'||mode==='both') ? 'block':'none';
   document.getElementById('pointsBox').style.display = (mode==='points'||mode==='both') ? 'block':'none';
 });
-function submitPublish(){
-  const title = document.getElementById('pTitle').value.trim();
-  if(!title){ showToast('先给它起个标题吧～'); return; }
-  showToast(publishMode==='idle' ? '发布成功！姐妹们马上就能看到啦 🎉' : '求购发布成功，等待有缘人出现 🙋‍♀️');
-  document.getElementById('pTitle').value=''; document.getElementById('pDesc').value='';
-  setTimeout(()=>goView(publishMode==='idle' ? 'view-home' : 'view-want'), 700);
+async function submitPublish(formData, type) {
+    // 1. 根据前端传过来的类型（商品还是求购），自动匹配后端的接口路由
+    // 假设：type 为 'product' 代表商品，'want' 代表求购
+    const url = type === 'product' ? "/api/products" : "/api/wants";
+    
+    try {
+        // 2. 向后端发起 POST 请求
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+                // 如果后面加了登录，这里还需要带上 Token 认证，现在先不加
+            },
+            body: JSON.stringify(formData) // 把前端表单输入的假数据/真数据变成字符串传给后端
+        });
+
+        if (!response.ok) {
+            throw new Error(`发布失败，状态码: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("后端收到数据并返回了结果:", result);
+        alert("发布成功！");
+
+        // 3. 发布成功后，重新刷一下列表，让新发布的东西立刻显示出来
+        if (type === 'product') {
+            loadProducts(); 
+        } else {
+            loadWants();
+        }
+
+    } catch (error) {
+        console.error("发布功能出错了:", error);
+        alert("发布失败，请检查网络或联系后端队友");
+    }
 }
 
 /* ===================== MY PRODUCTS ===================== */
@@ -1139,9 +1200,95 @@ document.getElementById('pointsLog').innerHTML = pointsLog.map(l=>`
 renderMyProducts('all');
 renderMyTrades('buy');
 
+// ======= 提交登录 =======
+async function submitLogin() {
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+
+    if (!username || !password) {
+        alert("请填写账号和密码！");
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (!response.ok) throw new Error("用户名或密码错误");
+
+        const result = await response.json();
+        console.log("登录成功，后端返回：", result);
+
+        // 【核心】把后端返回的 token 存入浏览器本地缓存
+        // 假设后端返回的数据结构里叫 result.token 或 result.data.token
+        const token = result.token || (result.data && result.data.token);
+        if (token) {
+            localStorage.setItem("user_token", token);
+        }
+
+        alert("登录成功！");
+        // 隐藏弹窗
+        document.getElementById('login-modal').style.display = 'none';
+        
+        // 登录成功后，重新刷一下需要权限的数据（比如交易记录和积分）
+        loadPointsLog();
+        loadMyTrades();
+
+    } catch (error) {
+        console.error("登录失败:", error);
+        alert(error.message || "登录失败，请检查网络");
+    }
+}
+
+// ======= 提交注册 =======
+async function submitRegister() {
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+
+    if (!username || !password) {
+        alert("请填写账号和密码！");
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (!response.ok) throw new Error("注册失败，可能账号已存在");
+
+        alert("注册成功！现在可以直接点击登录啦。");
+    } catch (error) {
+        console.error("注册出错了:", error);
+        alert(error.message || "注册失败");
+    }
+}
+
 /* ===================== apply logo image sources ===================== */
 document.querySelectorAll('.logo-icon-img').forEach(img=>img.src=LOGO_ICON);
 document.querySelectorAll('.logo-full-img').forEach(img=>img.src=LOGO_FULL);
 </script>
+<div id="login-modal" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0px 0px 10px rgba(0,0,0,0.5); z-index: 9999; display: none;">
+    ### 🔑 欢迎登录 HerLoop
+    <hr>
+    <div style="margin-bottom: 10px;">
+        <label>账号：</label>
+        <input type="text" id="login-username" placeholder="请输入用户名/邮箱">
+    </div>
+    <div style="margin-bottom: 15px;">
+        <label>密码：</label>
+        <input type="password" id="login-password" placeholder="请输入密码">
+    </div>
+    <div>
+        <button onclick="submitLogin()">登录</button>
+        <button onclick="submitRegister()">注册</button>
+        <button onclick="document.getElementById('login-modal').style.display='none'">关闭</button>
+    </div>
+</div>
 </body>
 </html>
