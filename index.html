@@ -707,26 +707,19 @@ function svgIcon(name){ return ICONS[name] || ICONS.bag; }
 
 /* ===================== DATA ===================== */
 const products = [
-  {id:1, title:'真丝睡裙 米白色', category:'服饰', cond:'95新', desc:'澳洲带回的真丝睡裙，只穿过两次，颜色显白软糯，附原盒，不议价哦姐妹。', cash:120, points:0, mode:'cash', status:'on', icon:'dress', blob:'pink', date:'06-20', seller:{name:'小鹿',avatar:'🦌',verified:true}},
-  {id:2, title:'Herstory 课程笔记本（全套手写）', category:'图书', cond:'9成新', desc:'Herstory 三期完整课程笔记 + 思维导图，扫描件已备份给自己留念，原件出给有缘姐妹。', cash:0, points:80, mode:'points', status:'on', icon:'book', blob:'lavender', date:'06-19', seller:{name:'阿茶',avatar:'🍵',verified:true}},
-  {id:3, title:'瑜伽垫 NBR加厚 薄荷绿', category:'运动', cond:'轻微瑕疵', desc:'垫面有一处不到1cm的小压痕，不影响使用，买大了用不上，希望给到真正需要的人。', cash:35, points:20, mode:'both', status:'reserved', icon:'mat', blob:'mint', date:'06-18', seller:{name:'小叶',avatar:'🦢',verified:true}},
-  {id:4, title:'法语词典 + 语法精讲', category:'图书', cond:'正常使用', desc:'去欧洲交换时用的两本工具书，留学党自用，少量笔记勾画但不影响阅读。', cash:25, points:0, mode:'cash', status:'on', icon:'book2', blob:'mint', date:'06-17', seller:{name:'Vivi',avatar:'🌷',verified:false}},
-  {id:5, title:'化妆刷套装 12支装', category:'美妆', cond:'全新', desc:'专柜正品，朋友送的礼盒用不上，全新未拆封，可验货后交易。', cash:0, points:60, mode:'points', status:'on', icon:'brush', blob:'pink', date:'06-16', seller:{name:'小鹿',avatar:'🦌',verified:true}},
-  {id:6, title:'帆布托特包 燕麦色', category:'服饰', cond:'正常使用', desc:'日常通勤款，容量很大，背带处有轻微磨损，已经成交啦留作展示～', cash:45, points:0, mode:'cash', status:'sold', icon:'bag', blob:'mint', date:'06-14', seller:{name:'小叶',avatar:'🦢',verified:true}},
-  {id:7, title:'运动水壶 750ml', category:'生活', cond:'99新', desc:'保温效果很好，用了不到一周换了别的款，杯身无磕碰。', cash:18, points:10, mode:'both', status:'on', icon:'bottle', blob:'lavender', date:'06-13', seller:{name:'阿茶',avatar:'🍵',verified:true}},
-  {id:8, title:'小众香水 50ml 约剩7成', category:'美妆', cond:'正常使用', desc:'木质调，秋冬很合适，分装试过喜欢再来收这瓶，介意慎拍。', cash:60, points:0, mode:'cash', status:'on', icon:'perfume', blob:'pink', date:'06-12', seller:{name:'Vivi',avatar:'🌷',verified:false}},
+  { id: 1, title: '大牌口红(仅试色)', cash: 120, points: 50, mode: 'both', priceCash: 120, pricePoints: 50, tradeMode: 'both', desc: '正品口红，颜色不适合我，仅试色一次。', description: '正品口红，颜色不适合我，仅试色一次。', icon: 'lipstick', blob: 'pink' },
+  { id: 2, title: '复古针织开衫', cash: 85, points: 0, mode: 'cash', priceCash: 85, pricePoints: 0, tradeMode: 'cash', desc: '九成新，M码，温柔风针织衫。', description: '九成新，M码，温柔风针织衫。', icon: 'shirt', blob: 'mint' },
+  { id: 3, title: '考研英语真题资料', cash: 0, points: 100, mode: 'points', priceCash: 0, pricePoints: 100, tradeMode: 'points', desc: '全新未动，附带解析和网课资源。', description: '全新未动，附带解析和网课资源。', icon: 'book', blob: 'lavender' }
 ];
 
 const wants = [
-  {id:1, title:'求购 Kindle 电子书阅读器', budget:'¥300以内', desc:'看书用，二手九成新即可，最好带壳，颜色不限，能用就行～', icon:'kindle', date:'06-20', user:{name:'阿茶',avatar:'🍵'}},
-  {id:2, title:'求购法语启蒙绘本（带音频最佳）', budget:'200积分以内', desc:'给自己学法语用，希望是带音频版本的，方便跟读发音。', icon:'book2', date:'06-19', user:{name:'小鹿',avatar:'🦌'}},
-  {id:3, title:'求购一枚简约戒指', budget:'¥50-80', desc:'送自己的礼物，极简款，材质不限，size 13左右。', icon:'ring', date:'06-17', user:{name:'小叶',avatar:'🦢'}},
+  { id: 1, title: '求购一本八成新以上《红楼梦》', budget: 30, priceBudget: 30, desc: '哪个姐妹看完了想回血的可以滴滴我，最好带插图。' },
+  { id: 2, title: '蹲一个出二手瑜伽垫的', budget: 50, priceBudget: 50, desc: '想开始练瑜伽，要求无破损、防滑效果好一点的。' }
 ];
 
 const pointsLog = [
-  {t:'出售「化妆刷套装」获得积分', v:'+60', d:'06-16'},
-  {t:'购买「Herstory课程笔记本」', v:'-80', d:'06-15'},
-  {t:'完成 Herstory 课程认证奖励', v:'+50', d:'05-12'},
+  { id: 1, t: '出售「大牌口红」', description: '出售「大牌口红」', d: '2023-10-25 14:30', createdAt: '2023-10-25T14:30:00Z', v: '+50', amount: '+50' },
+  { id: 2, t: '签到奖励', description: '签到奖励', d: '2023-10-26 08:15', createdAt: '2023-10-26T08:15:00Z', v: '+5', amount: '+5' }
 ];
 
 const myTrades = {
