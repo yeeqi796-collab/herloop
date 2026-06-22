@@ -26,6 +26,8 @@ public class User {
 
     private Boolean verified;
 
+    private String role;
+
     @TableLogic
     private Integer deleted;
 

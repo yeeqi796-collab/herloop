@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `wechat` VARCHAR(100) DEFAULT NULL COMMENT '微信号',
     `points` INT NOT NULL DEFAULT 0 COMMENT '积分余额',
     `verified` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否认证 0-否 1-是',
+    `role` VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '角色: USER/ADMIN',
     `deleted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -109,3 +110,19 @@ CREATE TABLE IF NOT EXISTS `favorite` (
     UNIQUE KEY `uk_user_product` (`user_id`, `product_id`),
     KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='收藏表';
+
+-- ============================================
+-- 认证凭证表
+-- ============================================
+CREATE TABLE IF NOT EXISTS `verification_proof` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `user_id` BIGINT NOT NULL COMMENT '申请用户ID',
+    `image_url` VARCHAR(500) NOT NULL COMMENT '凭证图片URL',
+    `status` VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '审核状态: PENDING/APPROVED/REJECTED',
+    `reviewed_by` BIGINT DEFAULT NULL COMMENT '审核管理员ID',
+    `reviewed_at` DATETIME DEFAULT NULL COMMENT '审核时间',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='认证凭证表';
