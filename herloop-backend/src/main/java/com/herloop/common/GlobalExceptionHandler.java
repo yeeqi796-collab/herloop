@@ -17,6 +17,7 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(BusinessException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<?> handleBusiness(BusinessException e) {
         return Result.error(e.getCode(), e.getMessage());
     }
