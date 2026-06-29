@@ -1,6 +1,6 @@
 # HerLoop 她循环
 
-> 校园女性闲置交易平台 — Campus secondhand marketplace for female users
+> 女性社区闲置交易平台 — Community secondhand marketplace for female members
 
 [中文](#中文) ｜ [English](#english) 
 
