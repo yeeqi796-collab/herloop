@@ -18,6 +18,14 @@ public class PointsLog {
 
     private String description;
 
+    private String sourceType;
+
+    private Long sourceId;
+
+    private LocalDateTime expireAt;
+
+    private Integer used;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 }

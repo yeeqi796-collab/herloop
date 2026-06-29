@@ -18,6 +18,7 @@ public class ProductVO {
     private String tradeMode;
     private String status;
     private String icon;
+    private String images;
     private LocalDateTime createdAt;
     private SellerBrief seller;
 

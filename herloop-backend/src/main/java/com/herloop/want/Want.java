@@ -22,6 +22,8 @@ public class Want {
 
     private String icon;
 
+    private String images;
+
     private String status;
 
     @TableLogic

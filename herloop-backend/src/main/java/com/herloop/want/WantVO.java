@@ -12,6 +12,7 @@ public class WantVO {
     private String budget;
     private String description;
     private String icon;
+    private String images;
     private String status;
     private LocalDateTime createdAt;
     private UserBrief user;

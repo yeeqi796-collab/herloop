@@ -12,6 +12,7 @@ public class TradeVO {
     private ProductBrief product;
     private String type;
     private String status;
+    private Integer pointsPaid;
     private LocalDateTime tradeDate;
 
     @Data

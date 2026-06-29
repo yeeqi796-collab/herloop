@@ -28,5 +28,7 @@ public class ProductCreateRequest {
 
     private String icon;
 
+    private String images;
+
     private String wechat;
 }

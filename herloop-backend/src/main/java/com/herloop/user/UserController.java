@@ -1,5 +1,6 @@
 package com.herloop.user;
 
+import com.herloop.common.BusinessException;
 import com.herloop.common.CurrentUser;
 import com.herloop.common.PageResult;
 import com.herloop.common.Result;
@@ -19,7 +20,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/user")
@@ -41,6 +49,16 @@ public class UserController {
         return Result.success(toVO(user));
     }
 
+    /**
+     * 用户注销（逻辑删除）
+     */
+    @DeleteMapping("/deactivate")
+    public Result<Void> deactivate() {
+        Long userId = CurrentUser.getId();
+        userMapper.deleteById(userId);
+        return Result.success(null);
+    }
+
     @PutMapping("/profile")
     public Result<UserVO> updateProfile(@RequestBody Map<String, String> body) {
         Long userId = CurrentUser.getId();
@@ -50,6 +68,38 @@ public class UserController {
         if (body.containsKey("wechat")) user.setWechat(body.get("wechat"));
         userMapper.updateById(user);
         return Result.success(toVO(user));
+    }
+
+    /**
+     * 上传头像
+     */
+    @PostMapping("/avatar")
+    public Result<Map<String, String>> uploadAvatar(@RequestParam("file") MultipartFile file) throws IOException {
+        Long userId = CurrentUser.getId();
+        if (file.isEmpty()) {
+            throw new BusinessException("请选择图片");
+        }
+        String ext = file.getOriginalFilename();
+        if (ext != null && ext.contains(".")) {
+            ext = ext.substring(ext.lastIndexOf("."));
+        } else {
+            ext = ".jpg";
+        }
+        String filename = userId + "_" + UUID.randomUUID().toString().substring(0, 8) + ext;
+        String baseDir = System.getProperty("user.dir");
+        Path uploadDir = Paths.get(baseDir, "uploads", "avatars");
+        Files.createDirectories(uploadDir);
+        Path filePath = uploadDir.resolve(filename);
+        file.transferTo(filePath.toFile());
+
+        String url = "/uploads/avatars/" + filename;
+
+        // 更新用户头像
+        User user = userMapper.selectById(userId);
+        user.setAvatar(url);
+        userMapper.updateById(user);
+
+        return Result.success(Map.of("url", url));
     }
 
     @GetMapping("/products")
@@ -102,6 +152,8 @@ public class UserController {
         vo.setWechat(user.getWechat());
         vo.setPoints(user.getPoints());
         vo.setVerified(user.getVerified());
+        vo.setRole(user.getRole());
+        vo.setInviteCode("user_" + user.getId());
         vo.setCreatedAt(user.getCreatedAt());
 
         Long uid = user.getId();

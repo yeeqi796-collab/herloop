@@ -9,6 +9,7 @@ public class ProductQueryRequest {
     private String tradeMode;
     private String status;
     private String keyword;
+    private Long cursor;
     private Integer page = 1;
     private Integer pageSize = 10;
 }

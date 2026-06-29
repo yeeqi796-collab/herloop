@@ -34,6 +34,8 @@ public class Product {
 
     private String icon;
 
+    private String images;
+
     private String wechat;
 
     @TableLogic

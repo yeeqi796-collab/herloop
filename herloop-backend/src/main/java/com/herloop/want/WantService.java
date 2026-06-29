@@ -70,6 +70,26 @@ public class WantService {
         wantMapper.updateById(want);
     }
 
+    public void addImages(Long userId, Long wantId, String imageUrls) {
+        Want want = wantMapper.selectById(wantId);
+        if (want == null) {
+            throw new BusinessException(404, "求购不存在");
+        }
+        if (!want.getUserId().equals(userId)) {
+            throw new BusinessException(403, "无权操作他人求购");
+        }
+        // 追加图片到现有列表
+        String existing = want.getImages();
+        if (StringUtils.hasText(existing) && !"[]".equals(existing)) {
+            // 拼接 JSON 数组：去掉末尾 ]，加上新 URL 和 ]
+            existing = existing.substring(0, existing.length() - 1) + "," + imageUrls + "]";
+        } else {
+            existing = "[" + imageUrls + "]";
+        }
+        want.setImages(existing);
+        wantMapper.updateById(want);
+    }
+
     public PageResult<WantVO> listMyWants(Long userId, int page, int pageSize) {
         LambdaQueryWrapper<Want> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Want::getUserId, userId);
@@ -92,6 +112,7 @@ public class WantService {
         vo.setBudget(want.getBudget());
         vo.setDescription(want.getDescription());
         vo.setIcon(want.getIcon());
+        vo.setImages(want.getImages());
         vo.setStatus(want.getStatus());
         vo.setCreatedAt(want.getCreatedAt());
 

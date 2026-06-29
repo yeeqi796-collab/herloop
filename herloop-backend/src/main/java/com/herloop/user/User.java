@@ -28,6 +28,8 @@ public class User {
 
     private String role;
 
+    private Long invitedBy;
+
     @TableLogic
     private Integer deleted;
 

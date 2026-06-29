@@ -19,5 +19,6 @@ public class LoginResponse {
         private String avatar;
         private Integer points;
         private Boolean verified;
+        private String role;
     }
 }

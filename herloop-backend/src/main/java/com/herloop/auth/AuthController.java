@@ -38,7 +38,8 @@ public class AuthController {
     public Result<Map<String, Long>> submitProof(@RequestParam("file") MultipartFile file) throws IOException {
         Long userId = CurrentUser.getId();
 
-        Path uploadDir = Paths.get("uploads/proofs");
+        String baseDir = System.getProperty("user.dir");
+        Path uploadDir = Paths.get(baseDir, "uploads", "proofs");
         Files.createDirectories(uploadDir);
 
         String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();

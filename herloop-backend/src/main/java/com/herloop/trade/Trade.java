@@ -22,6 +22,8 @@ public class Trade {
 
     private String status;
 
+    private Integer pointsPaid;
+
     private LocalDateTime tradeDate;
 
     @TableLogic

@@ -23,4 +23,6 @@ public class RegisterRequest {
     private String avatar;
 
     private String wechat;
+
+    private String inviteCode;
 }

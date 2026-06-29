@@ -1,36 +1,38 @@
-# ===== IDE =====
+# IDE
 .idea/
 .vscode/
 *.iml
 *.ipr
 *.iws
 
-# ===== Java / Maven =====
+# Java / Maven
 target/
 *.class
 *.jar
 *.war
-*.log
 
-# ===== OS =====
+# OS
 .DS_Store
 Thumbs.db
-desktop.ini
 
-# ===== Env =====
+# Logs
+*.log
+app.log
+
+# Secrets
 *.env
 *.env.local
+*.pem
 
-# ===== Spring Boot 敏感配置 =====
+# Spring Boot config (contains DB creds + JWT secret)
 application.yml
 application-*.yml
 !application-example.yml
 
-# ===== Node (如果前端用到) =====
-node_modules/
-dist/
+# Generated / tooling
+CLAUDE.md
 
-# ===== Misc =====
+# Editor swap files
 *.swp
 *.swo
 *~
